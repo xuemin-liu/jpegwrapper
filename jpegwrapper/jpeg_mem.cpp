@@ -9,9 +9,9 @@
 #include <iostream>
 #include <vector>
 #include <cstring>
-#include "assert_macros.h"
 #include "jpeg_mem_advance.h"
-#include "raii.h"
+#include "../bin/dependent_sources/assert_macros.h"
+#include "../bin/dependent_sources/raii.h"
 jpeg_custom_output_fun jpeg_custom_output_default=[](j_common_ptr){};
 /* 自定义jpeg图像压缩/解压缩过程中错误退出函数 */
 METHODDEF(void) jpeg_mem_error_exit (j_common_ptr cinfo) {
@@ -311,6 +311,9 @@ void jpeg_decompress_default::start_output(const jpeg_decompress_struct & dinfo)
 		dinfo.output_width,
 		dinfo.output_height,
 		dinfo.output_components,
+		dinfo.data_precision,
+		0,
+		0, //????
 		(FS_COLOR_SPACE)dinfo.out_color_space,
 		0,
 		nullptr);

@@ -10,7 +10,7 @@
 #include <vector>
 #include <stdexcept>
 #include <string>
-#include "image_matrix_types.h"
+#include "../bin/dependent_sources/image_matrix_types.h"
 
  /* openjpeg编码解码异常类 */
 class opj_exception :public std::logic_error {

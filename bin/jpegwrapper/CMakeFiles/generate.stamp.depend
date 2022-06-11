@@ -1,0 +1,14 @@
+# CMake generation dependency list for this directory.
+C:/OpenjpegWrapper/jpegwrapper/cmake/Modules/FindOpenJPEG.cmake
+C:/OpenjpegWrapper/jpegwrapper/cmake/Modules/FindTurboJPEG.cmake
+C:/OpenjpegWrapper/jpegwrapper/cmake/config.cmake.in
+C:/OpenjpegWrapper/jpegwrapper/dependencies/openjpeg-windows-vc-x86_64/lib/openjpeg-2.1/OpenJPEGConfig.cmake
+C:/OpenjpegWrapper/jpegwrapper/dependencies/openjpeg-windows-vc-x86_64/lib/openjpeg-2.1/OpenJPEGTargets-debug.cmake
+C:/OpenjpegWrapper/jpegwrapper/dependencies/openjpeg-windows-vc-x86_64/lib/openjpeg-2.1/OpenJPEGTargets-release.cmake
+C:/OpenjpegWrapper/jpegwrapper/dependencies/openjpeg-windows-vc-x86_64/lib/openjpeg-2.1/OpenJPEGTargets.cmake
+C:/OpenjpegWrapper/jpegwrapper/jpegwrapper/CMakeLists.txt
+C:/Program Files/CMake/share/cmake-3.20/Modules/BasicConfigVersion-SameMajorVersion.cmake.in
+C:/Program Files/CMake/share/cmake-3.20/Modules/CMakePackageConfigHelpers.cmake
+C:/Program Files/CMake/share/cmake-3.20/Modules/FindPackageHandleStandardArgs.cmake
+C:/Program Files/CMake/share/cmake-3.20/Modules/FindPackageMessage.cmake
+C:/Program Files/CMake/share/cmake-3.20/Modules/WriteBasicConfigVersionFile.cmake

@@ -1,0 +1,9 @@
+C:/OpenjpegWrapper/jpegwrapper/bin/CMakeFiles/INSTALL.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/CMakeFiles/ALL_BUILD.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/CMakeFiles/ZERO_CHECK.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/dependencies/CMakeFiles/INSTALL.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/dependencies/common_source_cpp/CMakeFiles/INSTALL.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/dependencies/cimg/CMakeFiles/INSTALL.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/jpegwrapper/CMakeFiles/jpegwrapper-static.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/jpegwrapper/CMakeFiles/testCImg.dir
+C:/OpenjpegWrapper/jpegwrapper/bin/jpegwrapper/CMakeFiles/INSTALL.dir

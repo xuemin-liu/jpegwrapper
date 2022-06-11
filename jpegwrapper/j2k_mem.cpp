@@ -6,8 +6,8 @@
  */
 #include <memory>
 #include "j2k_mem_advance.h"
-#include "raii.h"
-#include "assert_macros.h"
+#include "../bin/dependent_sources/raii.h"
+#include "../bin/dependent_sources/assert_macros.h"
 #define DEFAULT_MEM_STREAM_INIT_SIZE (1024*16)
 
 /**
@@ -71,6 +71,24 @@ OPJ_SIZE_T opj_stream_interface_write(void* p_buffer, OPJ_SIZE_T p_nb_bytes, opj
 OPJ_SIZE_T opj_stream_interface_read(void* p_buffer, OPJ_SIZE_T p_nb_bytes, opj_stream_interface* stream_instance) {
 	return stream_instance->read(p_buffer, p_nb_bytes);
 }
+
+// 将fs_image_matrix中按像素连续存储的通道数据依照opj_image_t的格式拆开到不同的comps中
+template<typename T>
+void fill_channels(const fs_image_matrix& matrix, opj_image_t* image)
+{
+	int index = 0;
+	auto src = (T*)matrix.pixels;
+	for (decltype(matrix.height) y = 0; y < matrix.height; ++y) {
+		auto scanline = src + matrix.channels * matrix.width * y;
+		for (decltype(matrix.width) x = 0; x < matrix.width; ++x) {
+			auto pixel = scanline + matrix.channels * x;
+			for (decltype(matrix.channels) ch = 0; ch < matrix.channels; ++ch) {
+				image->comps[ch].data[index++] = (OPJ_INT32)pixel[ch];
+			}
+		}
+	}
+}
+
 /* 从fs_image_matrix创建 opj_image_t
  * 失败则抛出 opj_exception 异常
  */
@@ -85,9 +103,9 @@ opj_image_t* opj_image_create_from_matrix(const fs_image_matrix& matrix, opj_cpa
 	throw_if_msg(matrix.channels>4||0==matrix.channels,"matrix.channels must be 1/2/3/4")
 	memset(cmptparm, 0, matrix.channels * sizeof(opj_image_cmptparm_t));
 	for (auto i = matrix.channels; i >0; --i) {
-		cmptparm[i-1].prec = 8;
-		cmptparm[i-1].bpp = 8;
-		cmptparm[i-1].sgnd = 0;
+		cmptparm[i-1].prec = matrix.prec;
+		cmptparm[i-1].bpp = matrix._bpp;
+		cmptparm[i-1].sgnd = matrix.sgnd;
 		cmptparm[i-1].dx = (OPJ_UINT32) (subsampling_dx);
 		cmptparm[i-1].dy = (OPJ_UINT32) (subsampling_dy);
 		cmptparm[i-1].w = (OPJ_UINT32) (matrix.width);
@@ -101,25 +119,72 @@ opj_image_t* opj_image_create_from_matrix(const fs_image_matrix& matrix, opj_cpa
 	image->y0 = (OPJ_UINT32) (parameters->image_offset_y0);
 	image->x1 = image->x0 + (OPJ_UINT32) ((matrix.width - 1)) * (OPJ_UINT32) (subsampling_dx) + 1;
 	image->y1 = image->y0 + (OPJ_UINT32) ((matrix.height - 1)) * (OPJ_UINT32) (subsampling_dy) + 1;
-	auto index = 0;
-	uint8_t*scanline,*pixel;
-	decltype(matrix.height) y;
-	decltype(matrix.width) x;
-	decltype(matrix.channels) ch;
-	auto row_stride = matrix.get_row_stride();
+	//auto row_stride = matrix.get_row_stride();
 	// 将fs_image_matrix中按像素连续存储的通道数据依照opj_image_t的格式拆开到不同的comps中
-	for (y = 0; y <matrix.height; ++y) {
-		scanline = const_cast<uint8_t*>(matrix.pixels)+ matrix.channels * row_stride * y;
-		for (x = 0; x <matrix.width ; ++x) {
-			pixel = scanline+matrix.channels * x;
-			for (ch = 0; ch < matrix.channels; ++ch) {
-				image->comps[ch].data[index] = (OPJ_INT32)pixel[ch];
-			}
-			++index;
+	auto bytes = (matrix.prec + 7) / 8;
+	if (matrix.sgnd) {
+		switch (bytes) {
+		case 1:
+			fill_channels<int8_t>(matrix, image);
+			break;
+		case 2:
+			fill_channels<int16_t>(matrix, image);
+			break;
+		case 3:
+			throw opj_exception("Unsupported precision\n");
+		case 4:
+			fill_channels<int32_t>(matrix, image);
+			break;
+		default:
+			throw opj_exception("Unsupported precision\n");
+			break;
+		}
+	}
+	else {
+		switch (bytes) {
+		case 1:
+			fill_channels<uint8_t>(matrix, image);
+			break;
+		case 2:
+			fill_channels<uint16_t>(matrix, image);
+			break;
+		case 3:
+			throw opj_exception("Unsupported precision\n");
+		case 4:
+			fill_channels<uint32_t>(matrix, image);
+			break;
+		default:
+			throw opj_exception("Unsupported precision\n");
+			break;
 		}
 	}
 	return image;
 }
+
+// 将opj_image_t在不同的comps按通道存储的数据合并形成按像素连续存储
+template<typename T>
+void fill_buffer(fs_image_matrix const& matrix, opj_image_t* image)
+{
+	uint32_t index = 0;
+	T* scanline;
+	T* pixel;
+	T* matrix_pixels = reinterpret_cast<T*>(matrix.pixels);
+
+	decltype(matrix.height) y;
+	decltype(matrix.width) x;
+	decltype(matrix.channels) ch;
+
+	for (y = 0; y < matrix.height; ++y) {
+		scanline = matrix_pixels + matrix.channels * matrix.width * y;
+		for (x = 0; x < matrix.width; ++x) {
+			pixel = scanline + matrix.channels * x;
+			for (ch = 0; ch < matrix.channels; ++ch) {
+				pixel[ch] = (T)(image->comps[ch].data[index++]);
+			}
+		}
+	}
+}
+
 /* 从opj_image_t 创建 fs_image_matrix
  * 失败则抛出 opj_exception 异常
  */
@@ -131,7 +196,7 @@ fs_image_matrix create_matrix_from_opj_image(opj_image_t* image) {
 		auto w0 = image->comps[0].w;
 		auto h0 = image->comps[0].h;
 		for (auto i = image->numcomps - 1; i > 0; --i) {
-			throw_except_if_msg(opj_exception, w0 != image->comps[i].w || h0 != image->comps[i].h || image->comps[i].prec>8 || image->comps[i].bpp>8,
+			throw_except_if_msg(opj_exception, w0 != image->comps[i].w || h0 != image->comps[i].h/* || image->comps[i].prec>8 || image->comps[i].bpp>8*/,
 				"each components has different size");
 		}
 	}
@@ -140,27 +205,51 @@ fs_image_matrix create_matrix_from_opj_image(opj_image_t* image) {
 		image->comps[0].w,
 		image->comps[0].h,
 		(uint8_t)(image->numcomps),
+		(uint8_t)(image->comps[0].prec),
+		(uint8_t)(image->comps[0].bpp),
+		(uint8_t)(image->comps[0].sgnd),
 		(FS_COLOR_SPACE)opj_to_jpeglib_color_space(image->color_space),
 		0, nullptr);
 	if (!b) {
 		throw opj_exception("fail to fs_make_matrix");
 	}
-	auto row_stride = matrix.get_row_stride();
-
-	uint32_t index = 0;
-	uint8_t* scanline,*pixel;
-	decltype(matrix.height) y;
-	decltype(matrix.width) x;
-	decltype(matrix.channels) ch;
 	// 将opj_image_t在不同的comps按通道存储的数据合并形成按像素连续存储
-	for ( y = 0; y < matrix.height; ++y ) {
-		scanline = matrix.pixels+ matrix.channels * row_stride * y;
-		for ( x = 0; x < matrix.width; ++x ) {
-			pixel = scanline+matrix.channels * x;
-			for (ch = 0; ch < matrix.channels; ++ch) {
-				pixel[ch] = (uint8_t) (image->comps[ch].data[index]);
-			}
-			++index;
+	auto bytes = (matrix.prec + 7) / 8;
+	if (matrix.sgnd) {
+		switch (bytes)
+		{
+		case 1:
+			fill_buffer<int8_t>(matrix, image);
+			break;
+		case 2:
+			fill_buffer<int16_t>(matrix, image);
+			break;
+		case 3:
+			throw opj_exception("Unsupported precision\n");
+		case 4:
+			fill_buffer<int32_t>(matrix, image);
+			break;
+		default:
+			throw opj_exception("Unsupported precision\n");
+			break;
+		}
+	}
+	else {
+		switch (bytes) {
+		case 1:
+			fill_buffer<uint8_t>(matrix, image);
+			break;
+		case 2:
+			fill_buffer<uint16_t>(matrix, image);
+			break;
+		case 3:
+			throw opj_exception("Unsupported precision\n");
+		case 4:
+			fill_buffer<uint32_t>(matrix, image);
+			break;
+		default:
+			throw opj_exception("Unsupported precision\n");
+			break;
 		}
 	}
 	return std::move(matrix);

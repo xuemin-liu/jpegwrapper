@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 #include <memory>
-#include "image_matrix_types.h"
+#include "../bin/dependent_sources/image_matrix_types.h"
  /* jpeg图像处理异常类 */
 class jpeg_mem_exception :public std::logic_error {
 public:
