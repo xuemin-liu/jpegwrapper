@@ -304,9 +304,14 @@ void save_j2k(const fs_image_matrix& matrix, opj_stream_interface& dest, const u
 	auto parameters= std::make_shared<opj_cparameters_t>();
 	/* set encoding parameters to default values */
 	opj_set_default_encoder_parameters(parameters.get());
-	parameters->tcp_numlayers=1;
-	parameters->tcp_distoratio[0]=(float)(quality>100?100:quality);
-	parameters->cp_fixed_quality=1;
+
+	if (quality < 100) {
+		//Lossy
+		parameters->tcp_numlayers = 1;
+		parameters->tcp_distoratio[0] = quality;
+		parameters->cp_fixed_quality = 1;
+	}
+
 	/*parameters->tcp_numlayers=1;
 	parameters->tcp_rates[0]=5;
 	//parameters->tcp_rates[1]=40;
