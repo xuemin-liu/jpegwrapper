@@ -83,8 +83,9 @@ void fill_channels(const fs_image_matrix& matrix, opj_image_t* image)
 		for (decltype(matrix.width) x = 0; x < matrix.width; ++x) {
 			auto pixel = scanline + matrix.channels * x;
 			for (decltype(matrix.channels) ch = 0; ch < matrix.channels; ++ch) {
-				image->comps[ch].data[index++] = (OPJ_INT32)pixel[ch];
+				image->comps[ch].data[index] = (OPJ_INT32)pixel[ch];
 			}
+			index++;
 		}
 	}
 }
@@ -179,8 +180,9 @@ void fill_buffer(fs_image_matrix const& matrix, opj_image_t* image)
 		for (x = 0; x < matrix.width; ++x) {
 			pixel = scanline + matrix.channels * x;
 			for (ch = 0; ch < matrix.channels; ++ch) {
-				pixel[ch] = (T)(image->comps[ch].data[index++]);
+				pixel[ch] = (T)(image->comps[ch].data[index]);
 			}
+			index++;
 		}
 	}
 }

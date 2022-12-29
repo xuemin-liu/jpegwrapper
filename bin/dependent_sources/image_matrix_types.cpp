@@ -9,7 +9,7 @@ uint32_t fs_get_row_stride(const fs_image_matrix_ptr matrix)
 	}
 	// align÷ª»°µÕ4Œª
 	uint32_t m = (1U << (matrix->align & 0x0f)) - 1;
-	return uint32_t((matrix->width * ((matrix->prec + 7)/ 8) + m)&(~m));
+	return uint32_t((matrix->width * ((matrix->prec + 7)/ 8) + m)&(~m)) * matrix->channels;
 }
 
 uint32_t fs_get_matrix_size(const fs_image_matrix_ptr matrix)
